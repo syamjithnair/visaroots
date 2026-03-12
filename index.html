@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Currency Dashboard</title>
+    <title>Live Currency Exchange Dashboard</title>
     <style>
-        /* Base Styles */
+        /* Base & Background */
         html, body { height: 100%; margin: 0; overflow: hidden; }
         body {
             background: linear-gradient(45deg, #49a09d, #5f2c82);
@@ -17,37 +17,44 @@
             justify-content: center;
         }
 
-        /* Logo Styling */
-        .logo-container {
-            text-align: center;
-            margin-bottom: 30px; /* Space between logo and table */
-        }
+        /* Logo Section */
+        .logo-container { text-align: center; margin-bottom: 20px; }
         .logo-container img {
-            max-width: 400px; /* Adjust size as needed */
+            max-width: 350px;
             height: auto;
-            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.3)); /* Makes logo pop */
+            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.3));
         }
 
-        /* Table Styling */
-        .container { width: 800px; z-index: 1; }
+        /* Dashboard Container */
+        .container { width: 900px; z-index: 1; }
         table {
             width: 100%;
             border-collapse: collapse;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(0,0,0,0.3);
-            border-radius: 10px;
+            border-radius: 12px;
         }
         th, td {
-            padding: 15px;
+            padding: 18px;
             background-color: rgba(255,255,255,0.2);
             color: #fff;
-            text-align: left;
+            text-align: center; /* Centered for better readability of rates */
         }
-        thead th { background-color: #55608f; font-weight: 600; }
-        tbody tr:hover { background-color: rgba(255,255,255,0.3); }
+        thead th { 
+            background-color: #55608f; 
+            font-weight: 600; 
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        tbody tr:hover { background-color: rgba(255,255,255,0.3); transition: 0.3s; }
         
-        /* Loading Text */
-        .loading-text { color: white; text-align: center; margin-bottom: 10px; font-size: 0.8rem; opacity: 0.7; }
+        .currency-name { font-weight: bold; text-align: left; }
+        .buy-col { color: #afffaf; font-weight: bold; } /* Greenish for Buy */
+        .sale-col { color: #ffbaba; font-weight: bold; } /* Reddish for Sale */
+
+        /* Loading & Status */
+        .status-bar { color: white; text-align: center; margin-bottom: 10px; font-size: 0.8rem; opacity: 0.8; }
 
         /* Ticker Styling */
         .ticker-wrap {
@@ -56,24 +63,23 @@
             width: 100%;
             overflow: hidden;
             height: 3rem;
-            background-color: rgba(0, 0, 0, 0.4); 
-            padding-left: 100%;
+            background-color: rgba(0, 0, 0, 0.5); 
             display: flex;
             align-items: center;
         }
         .ticker {
             display: inline-block;
             white-space: nowrap;
-            animation: ticker 30s linear infinite;
+            animation: ticker 40s linear infinite;
+            padding-left: 100%;
         }
         .ticker__item {
             display: inline-block;
-            padding: 0 2rem;
-            font-size: 1rem;
+            padding: 0 2.5rem;
+            font-size: 0.9rem;
             color: white;
-            font-weight: bold;
         }
-        .ticker__item span { font-weight: 100; color: #49a09d; margin-right: 5px; }
+        .ticker__item b { color: #49a09d; }
 
         @keyframes ticker {
             0% { transform: translate3d(0, 0, 0); }
@@ -85,20 +91,22 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="https://static.wixstatic.com/media/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png/v1/fill/w_780,h_146,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png" alt="Company Logo">
+        <img src="https://static.wixstatic.com/media/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png/v1/fill/w_780,h_146,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png" alt="Logo">
     </div>
 
-    <div id="loading" class="loading-text">Synchronizing data...</div>
+    <div id="status" class="status-bar">Initializing live INR feeds...</div>
     
     <table>
         <thead>
             <tr>
-                <th>Currency (Base USD)</th>
-                <th>Rate</th>
-                <th>Symbol</th>
+                <th style="text-align: left;">Currency</th>
+                <th>Market Rate (INR)</th>
+                <th>Buy Rate (Market -1)</th>
+                <th>Sale Rate (Market +1)</th>
             </tr>
         </thead>
-        <tbody id="rates-body"></tbody>
+        <tbody id="rates-body">
+            </tbody>
     </table>
 </div>
 
@@ -107,43 +115,14 @@
 </div>
 
 <script>
-    const apiURL = "https://open.er-api.com/v6/latest/USD";
+    // Using INR as the base for direct calculation
+    const apiURL = "https://open.er-api.com/v6/latest/INR";
 
     async function fetchRates() {
         try {
             const response = await fetch(apiURL);
             const data = await response.json();
+            
             if (data.result === "success") {
                 const rates = data.rates;
-                const mainCurrencies = ['EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF'];
-                const tickerCurrencies = Object.keys(rates).slice(0, 20);
-
-                const tbody = document.getElementById('rates-body');
-                tbody.innerHTML = '';
-                mainCurrencies.forEach(cur => {
-                    tbody.innerHTML += `<tr><td>${cur}</td><td>${rates[cur].toFixed(4)}</td><td>${getSymbol(cur)}</td></tr>`;
-                });
-
-                const ticker = document.getElementById('ticker-content');
-                ticker.innerHTML = '';
-                tickerCurrencies.forEach(cur => {
-                    ticker.innerHTML += `<div class="ticker__item"><span>USD/${cur}</span> ${rates[cur].toFixed(2)}</div>`;
-                });
-
-                document.getElementById('loading').innerText = "Last Update: " + new Date().toLocaleTimeString();
-            }
-        } catch (e) {
-            document.getElementById('loading').innerText = "Connection error.";
-        }
-    }
-
-    function getSymbol(cur) {
-        const symbols = { 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'Fr' };
-        return symbols[cur] || '';
-    }
-
-    fetchRates();
-</script>
-
-</body>
-</html>
+                // We want to see how much 1 unit of foreign currency costs
