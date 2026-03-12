@@ -5,24 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Currency Dashboard</title>
     <style>
-        /* Your Custom CSS (Converted to Standard CSS) */
-        html, body { height: 100%; margin: 0; }
+        /* Base Styles */
+        html, body { height: 100%; margin: 0; overflow: hidden; }
         body {
             background: linear-gradient(45deg, #49a09d, #5f2c82);
             font-family: sans-serif;
             font-weight: 100;
             display: flex;
+            flex-direction: column; /* Stack table and scroll */
             align-items: center;
             justify-content: center;
         }
-        .container {
-            width: 800px;
-        }
+
+        /* Table Styling */
+        .container { width: 800px; z-index: 1; }
         table {
             width: 100%;
             border-collapse: collapse;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            border-radius: 10px;
         }
         th, td {
             padding: 15px;
@@ -30,83 +32,34 @@
             color: #fff;
             text-align: left;
         }
-        thead th {
-            background-color: #55608f;
+        thead th { background-color: #55608f; font-weight: 600; }
+        tbody tr:hover { background-color: rgba(255,255,255,0.3); }
+        
+        /* Loading Text */
+        .loading-text { color: white; text-align: center; margin-bottom: 15px; font-size: 0.9rem; opacity: 0.8; }
+
+        /* --- Ticker / Scroll Styling --- */
+        .ticker-wrap {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            overflow: hidden;
+            height: 3rem;
+            background-color: rgba(0, 0, 0, 0.4); 
+            padding-left: 100%;
+            box-sizing: content-box;
+            display: flex;
+            align-items: center;
         }
-        tbody tr:hover {
-            background-color: rgba(255,255,255,0.3);
-        }
-        /* Column Highlight Effect */
-        td { position: relative; }
-        td:hover:before {
-            content: "";
-            position: absolute;
-            left: 0; right: 0; top: -9999px; bottom: -9999px;
-            background-color: rgba(255,255,255,0.2);
-            z-index: -1;
-        }
-        .loading-text { color: white; text-align: center; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
 
-<div class="container">
-    <div id="loading" class="loading-text">Fetching live market data...</div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Currency (Base USD)</th>
-                <th>Rate</th>
-                <th>Symbol</th>
-            </tr>
-        </thead>
-        <tbody id="rates-body">
-            </tbody>
-    </table>
-</div>
-
-<script>
-    const apiURL = "https://open.er-api.com/v6/latest/USD";
-
-    async function fetchRates() {
-        try {
-            const response = await fetch(apiURL);
-            const data = await response.json();
-
-            if (data.result === "success") {
-                const rates = data.rates;
-                // Selecting specific currencies to display
-                const targets = ['EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF'];
-                const tbody = document.getElementById('rates-body');
-                
-                tbody.innerHTML = ''; // Clear existing
-                
-                targets.forEach(cur => {
-                    const row = `
-                        <tr>
-                            <td>${cur}</td>
-                            <td>${rates[cur].toFixed(4)}</td>
-                            <td>${getSymbol(cur)}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-
-                document.getElementById('loading').innerText = "Last Updated: " + new Date().toLocaleTimeString();
-            }
-        } catch (error) {
-            document.getElementById('loading').innerText = "Failed to load data.";
-        }
-    }
-
-    function getSymbol(cur) {
-        const symbols = { 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'Fr' };
-        return symbols[cur] || '';
-    }
-
-    fetchRates();
-</script>
-
-</body>
-</html>
+        .ticker {
+            display: inline-block;
+            height: 3rem;
+            line-height: 3rem;  
+            white-space: nowrap;
+            padding-right: 100%;
+            box-sizing: content-box;
+            -webkit-animation-iteration-count: infinite; 
+            animation-iteration-count: infinite;
+            -webkit-animation-timing-function: linear;
+            animation-timing
