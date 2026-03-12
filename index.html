@@ -1,117 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Currency Dashboard</title>
+    <style>
+        /* Your Custom CSS (Converted to Standard CSS) */
+        html, body { height: 100%; margin: 0; }
+        body {
+            background: linear-gradient(45deg, #49a09d, #5f2c82);
+            font-family: sans-serif;
+            font-weight: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            width: 800px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 15px;
+            background-color: rgba(255,255,255,0.2);
+            color: #fff;
+            text-align: left;
+        }
+        thead th {
+            background-color: #55608f;
+        }
+        tbody tr:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+        /* Column Highlight Effect */
+        td { position: relative; }
+        td:hover:before {
+            content: "";
+            position: absolute;
+            left: 0; right: 0; top: -9999px; bottom: -9999px;
+            background-color: rgba(255,255,255,0.2);
+            z-index: -1;
+        }
+        .loading-text { color: white; text-align: center; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
 <div class="container">
-	<table>
-		<thead>
-			<tr>
-				<th>Column 1</th>
-				<th>Column 2</th>
-				<th>Column 3</th>
-				<th>Column 4</th>
-				<th>Column 5</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td>Cell 1</td>
-				<td>Cell 2</td>
-				<td>Cell 3</td>
-				<td>Cell 4</td>
-				<td>Cell 5</td>
-			</tr>
-			<tr>
-				<td>USD</td>
-				<td>Cell 2</td>
-				<td>Cell 3</td>
-				<td>Cell 4</td>
-				<td>Cell 5</td>
-			</tr>
-			<tr>
-				<td>Cell 1</td>
-				<td>Cell 2</td>
-				<td>Cell 3</td>
-				<td>Cell 4</td>
-				<td>Cell 5</td>
-			</tr>
-			<tr>
-				<td>Cell 1</td>
-				<td>Cell 2</td>
-				<td>Cell 3</td>
-				<td>Cell 4</td>
-				<td>Cell 5</td>
-			</tr>
-			<tr>
-				<td>Cell 1</td>
-				<td>Cell 2</td>
-				<td>Cell 3</td>
-				<td>Cell 4</td>
-				<td>Cell 5</td>
-			</tr>
-		</tbody>
-	</table>
+    <div id="loading" class="loading-text">Fetching live market data...</div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Currency (Base USD)</th>
+                <th>Rate</th>
+                <th>Symbol</th>
+            </tr>
+        </thead>
+        <tbody id="rates-body">
+            </tbody>
+    </table>
 </div>
 
+<script>
+    const apiURL = "https://open.er-api.com/v6/latest/USD";
 
-html,
-body {
-	height: 100%;
-}
+    async function fetchRates() {
+        try {
+            const response = await fetch(apiURL);
+            const data = await response.json();
 
-body {
-	margin: 0;
-	background: linear-gradient(45deg, #49a09d, #5f2c82);
-	font-family: sans-serif;
-	font-weight: 100;
-}
+            if (data.result === "success") {
+                const rates = data.rates;
+                // Selecting specific currencies to display
+                const targets = ['EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF'];
+                const tbody = document.getElementById('rates-body');
+                
+                tbody.innerHTML = ''; // Clear existing
+                
+                targets.forEach(cur => {
+                    const row = `
+                        <tr>
+                            <td>${cur}</td>
+                            <td>${rates[cur].toFixed(4)}</td>
+                            <td>${getSymbol(cur)}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
 
-.container {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-}
+                document.getElementById('loading').innerText = "Last Updated: " + new Date().toLocaleTimeString();
+            }
+        } catch (error) {
+            document.getElementById('loading').innerText = "Failed to load data.";
+        }
+    }
 
-table {
-	width: 800px;
-	border-collapse: collapse;
-	overflow: hidden;
-	box-shadow: 0 0 20px rgba(0,0,0,0.1);
-}
+    function getSymbol(cur) {
+        const symbols = { 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'Fr' };
+        return symbols[cur] || '';
+    }
 
-th,
-td {
-	padding: 15px;
-	background-color: rgba(255,255,255,0.2);
-	color: #fff;
-}
+    fetchRates();
+</script>
 
-th {
-	text-align: left;
-}
-
-thead {
-	th {
-		background-color: #55608f;
-	}
-}
-
-tbody {
-	tr {
-		&:hover {
-			background-color: rgba(255,255,255,0.3);
-		}
-	}
-	td {
-		position: relative;
-		&:hover {
-			&:before {
-				content: "";
-				position: absolute;
-				left: 0;
-				right: 0;
-				top: -9999px;
-				bottom: -9999px;
-				background-color: rgba(255,255,255,0.2);
-				z-index: -1;
-			}
-		}
-	}
-}
+</body>
+</html>
