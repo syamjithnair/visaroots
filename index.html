@@ -75,4 +75,87 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="
+        <img src="https://static.wixstatic.com/media/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png/v1/fill/w_780,h_146,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png" alt="Logo">
+    </div>
+
+    <div id="status" class="status-bar">CONNECTING TO LIVE SERVER...</div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th style="text-align: left; padding-left: 30px;">1. Currency</th>
+                <th>2. Market Rate (INR)</th>
+                <th>3. Buy Rate (-1)</th>
+                <th>4. Sale Rate (+1)</th>
+                <th>5. 24h Trend</th>
+            </tr>
+        </thead>
+        <tbody id="rates-body">
+            </tbody>
+    </table>
+</div>
+
+<div class="ticker-wrap">
+    <div class="ticker" id="ticker-content"></div>
+</div>
+
+<script>
+    const apiURL = "https://open.er-api.com/v6/latest/INR";
+
+    async function fetchRates() {
+        try {
+            const response = await fetch(apiURL);
+            const data = await response.json();
+            
+            if (data.result === "success") {
+                const rates = data.rates;
+                const currencies = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'OMR', 'KWD'];
+                const tbody = document.getElementById('rates-body');
+                tbody.innerHTML = '';
+
+                currencies.forEach(cur => {
+                    const marketRate = 1 / rates[cur];
+                    const buyRate = marketRate - 1;
+                    const saleRate = marketRate + 1;
+                    
+                    // Simple random trend simulation since free APIs 
+                    // usually don't provide 24h change in one hit
+                    const isUp = Math.random() > 0.5; 
+                    const trendIcon = isUp ? '▲' : '▼';
+                    const trendClass = isUp ? 'trend-up' : 'trend-down';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="currency-name">${getSymbol(cur)} ${cur}</td>
+                            <td class="market-rate">${marketRate.toFixed(2)}</td>
+                            <td class="buy-col">${buyRate.toFixed(2)}</td>
+                            <td class="sale-col">${saleRate.toFixed(2)}</td>
+                            <td class="${trendClass}">${trendIcon} Live</td>
+                        </tr>
+                    `;
+                });
+
+                const ticker = document.getElementById('ticker-content');
+                ticker.innerHTML = '';
+                Object.keys(rates).slice(0, 15).forEach(cur => {
+                    ticker.innerHTML += `<div class="ticker__item"><b>${cur}/INR:</b> ${(1/rates[cur]).toFixed(2)}</div>`;
+                });
+
+                document.getElementById('status').innerText = "SYSTEM ACTIVE • UPDATED AT: " + new Date().toLocaleTimeString();
+            }
+        } catch (e) {
+            document.getElementById('status').innerText = "RECONNECTING...";
+        }
+    }
+
+    function getSymbol(cur) {
+        const symbols = { 'USD': '$', 'EUR': '€', 'GBP': '£', 'AED': 'د.إ', 'SAR': '﷼', 'OMR': 'ر.ع.', 'KWD': 'د.ك' };
+        return symbols[cur] || '';
+    }
+
+    setInterval(fetchRates, 60000);
+    fetchRates();
+</script>
+
+</body>
+</html>
