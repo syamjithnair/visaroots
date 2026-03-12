@@ -62,4 +62,100 @@
             -webkit-animation-iteration-count: infinite; 
             animation-iteration-count: infinite;
             -webkit-animation-timing-function: linear;
-            animation-timing
+            animation-timing-function: linear;
+            -webkit-animation-name: ticker;
+            animation-name: ticker;
+            -webkit-animation-duration: 30s;
+            animation-duration: 30s;
+        }
+
+        .ticker__item {
+            display: inline-block;
+            padding: 0 2rem;
+            font-size: 1rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .ticker__item span { font-weight: 100; color: #49a09d; margin-right: 5px; }
+
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); visibility: visible; }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="loading" class="loading-text">Connecting to global markets...</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Currency (Base USD)</th>
+                <th>Rate</th>
+                <th>Symbol</th>
+            </tr>
+        </thead>
+        <tbody id="rates-body">
+            </tbody>
+    </table>
+</div>
+
+<div class="ticker-wrap">
+    <div class="ticker" id="ticker-content">
+        </div>
+</div>
+
+<script>
+    const apiURL = "https://open.er-api.com/v6/latest/USD";
+
+    async function fetchRates() {
+        try {
+            const response = await fetch(apiURL);
+            const data = await response.json();
+
+            if (data.result === "success") {
+                const rates = data.rates;
+                const mainCurrencies = ['EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF'];
+                const tickerCurrencies = Object.keys(rates).slice(0, 25); // Show first 25 for scroll
+
+                // Update Table
+                const tbody = document.getElementById('rates-body');
+                tbody.innerHTML = '';
+                mainCurrencies.forEach(cur => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${cur}</td>
+                            <td>${rates[cur].toFixed(4)}</td>
+                            <td>${getSymbol(cur)}</td>
+                        </tr>`;
+                });
+
+                // Update Ticker (Scroll)
+                const ticker = document.getElementById('ticker-content');
+                ticker.innerHTML = '';
+                tickerCurrencies.forEach(cur => {
+                    ticker.innerHTML += `
+                        <div class="ticker__item">
+                            <span>USD/${cur}</span> ${rates[cur].toFixed(2)}
+                        </div>`;
+                });
+
+                document.getElementById('loading').innerText = "Market Open • Last Update: " + new Date().toLocaleTimeString();
+            }
+        } catch (error) {
+            document.getElementById('loading').innerText = "Offline: Check connection.";
+        }
+    }
+
+    function getSymbol(cur) {
+        const symbols = { 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': '$', 'AUD': '$', 'CHF': 'Fr' };
+        return symbols[cur] || '';
+    }
+
+    fetchRates();
+</script>
+
+</body>
+</html>
