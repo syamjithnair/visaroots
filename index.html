@@ -24,8 +24,8 @@
             filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.3));
         }
 
-        /* Uniform Table Styling */
-        .container { width: 1000px; z-index: 1; }
+        /* Dashboard Table */
+        .container { width: 850px; z-index: 1; }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -36,7 +36,7 @@
         }
         th, td {
             padding: 20px;
-            color: #ffffff; /* Uniform White Text */
+            color: #ffffff;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
@@ -48,20 +48,29 @@
             letter-spacing: 1.5px;
         }
         
-        /* Removed green/red fonts - using uniform styling */
-        .rate-cell { font-family: monospace; font-size: 1.1rem; }
-        .currency-label { font-weight: bold; text-align: left; padding-left: 30px; }
+        .rate-cell { font-family: monospace; font-size: 1.2rem; }
+        .currency-label { font-weight: bold; text-align: left; padding-left: 40px; }
         
         tbody tr:hover { background: rgba(255,255,255,0.2); transition: 0.2s; }
         
-        .status-text { color: white; margin-bottom: 8px; font-size: 0.8rem; opacity: 0.7; }
+        /* Date/Time Status Bar */
+        .status-bar { 
+            color: white; 
+            margin-bottom: 12px; 
+            font-size: 0.9rem; 
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            opacity: 0.9;
+        }
 
         /* Ticker */
         .ticker-wrap {
             position: fixed; bottom: 0; width: 100%; overflow: hidden;
             height: 3rem; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center;
         }
-        .ticker { display: inline-block; white-space: nowrap; animation: ticker 50s linear infinite; }
+        .ticker { display: inline-block; white-space: nowrap; animation: ticker 40s linear infinite; }
         .ticker__item { display: inline-block; padding: 0 2rem; color: white; font-size: 0.9rem; }
         @keyframes ticker { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     </style>
@@ -73,20 +82,22 @@
         <img src="https://static.wixstatic.com/media/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png/v1/fill/w_780,h_146,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ed9bfe_d74412127c58485495e82381f71c7960~mv2.png" alt="Logo">
     </div>
 
-    <div id="status" class="status-text">Fetching Live INR Rates...</div>
+    <div class="status-bar">
+        <span id="live-indicator">● LIVE MARKET RATES</span>
+        <span id="date-time">Loading date and time...</span>
+    </div>
     
     <table>
         <thead>
             <tr>
-                <th style="text-align: left; padding-left: 30px;">Currency</th>
-                <th>Market Rate</th>
+                <th style="text-align: left; padding-left: 40px;">Currency</th>
+                <th>Market Rate (INR)</th>
                 <th>Buy Rate</th>
                 <th>Sale Rate</th>
-                <th>Last Updated</th>
             </tr>
         </thead>
         <tbody id="rates-body">
-            <tr><td colspan="5" style="padding: 40px;">Initializing secure data connection...</td></tr>
+            <tr><td colspan="4" style="padding: 50px;">Connecting to secure data feed...</td></tr>
         </tbody>
     </table>
 </div>
@@ -105,7 +116,13 @@
                 const rates = data.rates;
                 const currencies = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'OMR', 'KWD'];
                 const tbody = document.getElementById('rates-body');
-                const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Update Date and Time
+                const now = new Date();
+                const dateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+                const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                document.getElementById('date-time').innerText = 
+                    now.toLocaleDateString('en-GB', dateOptions) + " | " + now.toLocaleTimeString([], timeOptions);
                 
                 let rows = '';
                 currencies.forEach(cur => {
@@ -116,7 +133,6 @@
                             <td class="rate-cell">${market.toFixed(2)}</td>
                             <td class="rate-cell">${(market - 1).toFixed(2)}</td>
                             <td class="rate-cell">${(market + 1).toFixed(2)}</td>
-                            <td style="opacity: 0.6; font-size: 0.8rem;">${timeString}</td>
                         </tr>`;
                 });
                 tbody.innerHTML = rows;
@@ -126,10 +142,9 @@
                     <div class="ticker__item"><b>${cur}/INR:</b> ${(1/rates[cur]).toFixed(2)}</div>
                 `).join('');
 
-                document.getElementById('status').innerText = "Market Status: Live";
             }
         } catch (e) {
-            document.getElementById('status').innerText = "Status: Connection Error. Retrying...";
+            document.getElementById('date-time').innerText = "Connection lost. Retrying...";
         }
     }
 
@@ -139,6 +154,7 @@
     }
 
     fetchRates();
+    // Auto refresh every 60 seconds
     setInterval(fetchRates, 60000);
 </script>
 
